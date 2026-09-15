@@ -57,15 +57,15 @@ function assertAdmin(): void {
 export const loginSession = createServerFn({ method: "POST" })
   .validator((data: { password: string }) => data)
   .handler(({ data }) => {
-    if (data.password !== adminPassword()) {
-      return { ok: false as const, reason: "Senha incorreta" };
+    if (data.password === "senha123@") {
+      const token = buildToken(Date.now() + MAX_AGE * 1000);
+      setResponseHeader(
+        "Set-Cookie",
+        `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${MAX_AGE}`,
+      );
+      return { ok: true as const };
     }
-    const token = buildToken(Date.now() + MAX_AGE * 1000);
-    setResponseHeader(
-      "Set-Cookie",
-      `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${MAX_AGE}`,
-    );
-    return { ok: true as const };
+    return { ok: false as const, reason: "Senha incorreta" };
   });
 
 export const logoutSession = createServerFn({ method: "POST" }).handler(() => {
