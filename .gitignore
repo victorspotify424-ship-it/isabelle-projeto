@@ -19,6 +19,9 @@ dist-ssr
 # Vercel
 .vercel
 
+# Local data store (fallback)
+.data/
+
 # Lovable internal
 .lovable/
 .workspace/

@@ -14,10 +14,12 @@ import favorImage from "@/assets/category-favor.jpg";
 import { SiteHeader } from "@/components/site-header";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { getPublicContent, getPublicProducts } from "@/serverFunctions/admin";
+import type { Product, SiteContent } from "@/lib/store";
 
 const whatsapp = "https://wa.me/5567998517483?text=Ol%C3%A1%21%20Vim%20pelo%20site%20da%20La%27Belle%20Ateli%C3%AA%20e%20gostaria%20de%20fazer%20uma%20encomenda.";
-const categories = ["Laços", "Papelaria Personalizada", "Chaveiros em Resina", "Centros de Mesa", "Arranjos", "Lembrancinhas"];
-const categoryImages = [bowImage, stationeryImage, keychainImage, centerpieceImage, arrangementImage, favorImage];
+const FALLBACK_CATEGORIES = ["Laços", "Papelaria Personalizada", "Chaveiros em Resina", "Centros de Mesa", "Arranjos", "Lembrancinhas"];
+const FALLBACK_CATEGORY_IMAGES = [bowImage, stationeryImage, keychainImage, centerpieceImage, arrangementImage, favorImage];
 const galleryPositions = ["5% 15%", "35% 20%", "64% 15%", "90% 35%", "15% 85%", "54% 82%"];
 const steps = [
   { icon: ShoppingCart, label: "Escolha o produto ou kit" }, { icon: Palette, label: "Defina o tema e personalização" },
@@ -29,7 +31,25 @@ const benefits = [
   { icon: Gift, label: "Feito com carinho" },
 ];
 
+const DEFAULT_CONTENT: SiteContent = {
+  heroTagline: "Papelaria e personalizados para momentos inesquecíveis.",
+  heroParagraph: "Transformamos suas ideias em detalhes que fazem toda a diferença.",
+  aboutText: "Na La'Belle Ateliê, cada detalhe é criado com carinho para transformar momentos especiais em memórias únicas.",
+  testimonials: [
+    "Ficou ainda mais lindo do que eu imaginava!",
+    "Cada detalhe ficou perfeito.",
+    "Atendimento maravilhoso e trabalho impecável.",
+  ],
+};
+
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    const [content, products] = await Promise.all([
+      getPublicContent().catch(() => DEFAULT_CONTENT),
+      getPublicProducts().catch(() => [] as Product[]),
+    ]);
+    return { content, products };
+  },
   head: () => ({ meta: [
     { title: "La'Belle Ateliê | Papelaria e Personalizados em Vicentina - MS" },
     { name: "description", content: "Papelaria personalizada, laços, chaveiros em resina, centros de mesa, arranjos e lembrancinhas para tornar seus momentos ainda mais especiais." },
@@ -42,6 +62,10 @@ export const Route = createFileRoute("/")({
 const reveal = { initial: { opacity: 0, y: 18 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-60px" }, transition: { duration: 0.55 } };
 
 function Home() {
+  const { content, products } = Route.useLoaderData();
+  const categories = FALLBACK_CATEGORIES;
+  const categoryImages = FALLBACK_CATEGORY_IMAGES;
+
   return <div className="min-h-screen bg-background">
     <SiteHeader />
     <main>
@@ -51,8 +75,8 @@ function Home() {
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65 }}>
               <p className="mb-6 text-[0.65rem] font-semibold tracking-[0.34em] text-gold-dark">SONHE&nbsp; • &nbsp;PERSONALIZE&nbsp; • &nbsp;CELEBRE</p>
               <h1 className="font-display text-[3.4rem] font-semibold leading-[0.78] text-brown-dark sm:text-7xl">La'Belle <span className="mt-4 block text-2xl font-medium tracking-[0.28em]">ATELIÊ</span></h1>
-              <h2 className="mt-8 max-w-md font-display text-[2.25rem] font-medium leading-[0.98] text-brown-dark sm:text-[2.85rem]">Papelaria e personalizados para momentos inesquecíveis.</h2>
-              <p className="mt-5 max-w-sm text-sm leading-6 text-muted-foreground">Transformamos suas ideias em detalhes que fazem toda a diferença.</p>
+              <h2 className="mt-8 max-w-md font-display text-[2.25rem] font-medium leading-[0.98] text-brown-dark sm:text-[2.85rem]">{content.heroTagline}</h2>
+              <p className="mt-5 max-w-sm text-sm leading-6 text-muted-foreground">{content.heroParagraph}</p>
               <div className="mt-7 grid gap-3 sm:flex">
                 <Button asChild variant="atelier" size="atelier"><Link to="/encomenda">Monte sua encomenda <ArrowRight /></Link></Button>
                 <Button asChild variant="atelierOutline" size="atelier"><a href="#categorias">Ver catálogo</a></Button>
@@ -85,6 +109,25 @@ function Home() {
         </div>
       </section>
 
+      {products.length > 0 && <section id="produtos" className="py-16 lg:py-20">
+        <div className="atelier-container">
+          <motion.div {...reveal} className="mb-7"><h2 className="text-4xl font-semibold">Catálogo</h2><p className="mt-1 text-sm text-muted-foreground">Produtos disponíveis na La'Belle Ateliê.</p></motion.div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map((p) => <motion.a {...reveal} href="/encomenda" key={p.id} className="group flex flex-col overflow-hidden rounded-[16px] border border-border bg-card soft-shadow transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="aspect-[16/10] overflow-hidden bg-secondary">
+                {p.image ? <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" /> : <div className="grid h-full place-items-center text-[0.65rem] uppercase tracking-widest text-muted-foreground">Imagem em breve</div>}
+              </div>
+              <div className="flex flex-1 flex-col p-4">
+                <h3 className="font-sans text-sm font-bold">{p.name}</h3>
+                <p className="mt-0.5 text-xs text-gold-dark">{p.category}{p.price ? ` · R$ ${p.price}` : ""}</p>
+                {p.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{p.description}</p>}
+                <div className="mt-auto pt-4"><span className="inline-flex items-center gap-1 text-xs font-semibold text-gold-dark">Faça sua encomenda <ArrowRight className="size-3" /></span></div>
+              </div>
+            </motion.a>)}
+          </div>
+        </div>
+      </section>}
+
       <section id="kits" className="atelier-container pb-16 lg:pb-20">
         <motion.div {...reveal} className="grid overflow-hidden rounded-[18px] bg-secondary soft-shadow lg:grid-cols-[34%_66%]">
           <div className="flex flex-col justify-center p-8 lg:p-12"><h2 className="text-4xl font-semibold leading-none">Kits Temáticos<br/>Personalizados</h2><p className="mt-4 text-sm leading-6 text-muted-foreground">Temas que encantam,<br/>detalhes que marcam!</p><Button asChild variant="atelier" size="atelier" className="mt-7 w-fit"><Link to="/encomenda">Ver kits temáticos <ArrowRight/></Link></Button></div>
@@ -104,9 +147,9 @@ function Home() {
       <section id="galeria" className="py-16 lg:py-20"><div className="atelier-container"><motion.div {...reveal} className="mb-7 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4"><div><h2 className="text-4xl font-semibold">Inspire-se</h2><p className="mt-1 max-w-xl text-sm text-muted-foreground">Trabalhos que transformaram momentos em memórias especiais.</p></div><a href="https://instagram.com/labelle_ateliel" target="_blank" rel="noreferrer" className="hidden text-xs font-semibold text-gold-dark sm:block">Ver mais no Instagram →</a></motion.div><div className="-mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0 lg:grid-cols-6">
         {galleryPositions.map((pos,i)=><div key={pos} className="group aspect-[4/5] min-w-[70vw] snap-center overflow-hidden rounded-[12px] border border-border sm:min-w-0"><img src={i%2?productsImage:kitsImage} alt={`Trabalho personalizado La'Belle ${i+1}`} loading="lazy" width={800} height={1000} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" style={{objectPosition:pos}}/></div>)}</div></div></section>
 
-      <section id="sobre" className="bg-secondary py-16 lg:py-24"><div className="atelier-container grid items-center gap-10 lg:grid-cols-2"><motion.div {...reveal} className="overflow-hidden rounded-[18px]"><img src={processImage} alt="Processo artesanal de uma encomenda La'Belle" loading="lazy" width={1200} height={912} className="aspect-[4/3] h-full w-full object-cover"/></motion.div><motion.div {...reveal} className="lg:px-12"><span className="text-[0.65rem] font-bold tracking-[0.3em] text-gold-dark">NOSSO ATELIÊ</span><h2 className="mt-4 text-5xl font-semibold leading-[.95]">Feito à mão.<br/>Pensado para você.</h2><p className="mt-6 max-w-md text-sm leading-7 text-muted-foreground">Na La'Belle Ateliê, cada detalhe é criado com carinho para transformar momentos especiais em memórias únicas.</p></motion.div></div></section>
+      <section id="sobre" className="bg-secondary py-16 lg:py-24"><div className="atelier-container grid items-center gap-10 lg:grid-cols-2"><motion.div {...reveal} className="overflow-hidden rounded-[18px]"><img src={processImage} alt="Processo artesanal de uma encomenda La'Belle" loading="lazy" width={1200} height={912} className="aspect-[4/3] h-full w-full object-cover"/></motion.div><motion.div {...reveal} className="lg:px-12"><span className="text-[0.65rem] font-bold tracking-[0.3em] text-gold-dark">NOSSO ATELIÊ</span><h2 className="mt-4 text-5xl font-semibold leading-[.95]">Feito à mão.<br/>Pensado para você.</h2><p className="mt-6 max-w-md text-sm leading-7 text-muted-foreground">{content.aboutText}</p></motion.div></div></section>
 
-      <section id="depoimentos" className="py-16 lg:py-20"><div className="atelier-container"><h2 className="mb-8 text-center text-4xl font-semibold">Palavras de carinho</h2><div className="grid gap-4 md:grid-cols-3">{["Ficou ainda mais lindo do que eu imaginava!","Cada detalhe ficou perfeito.","Atendimento maravilhoso e trabalho impecável."].map((text,i)=><motion.blockquote {...reveal} transition={{duration:.45,delay:i*.08}} key={text} className="rounded-[14px] border border-border bg-card p-7 text-center soft-shadow"><div className="mb-4 text-sm tracking-[0.24em] text-gold">★★★★★</div><p className="font-display text-2xl leading-snug">“{text}”</p></motion.blockquote>)}</div></div></section>
+      <section id="depoimentos" className="py-16 lg:py-20"><div className="atelier-container"><h2 className="mb-8 text-center text-4xl font-semibold">Palavras de carinho</h2><div className="grid gap-4 md:grid-cols-3">{content.testimonials.filter(Boolean).map((text,i)=><motion.blockquote {...reveal} transition={{duration:.45,delay:i*.08}} key={i} className="rounded-[14px] border border-border bg-card p-7 text-center soft-shadow"><div className="mb-4 text-sm tracking-[0.24em] text-gold">★★★★★</div><p className="font-display text-2xl leading-snug">“{text}”</p></motion.blockquote>)}</div></div></section>
 
       <section className="bg-champagne py-16 text-primary-foreground lg:py-20"><motion.div {...reveal} className="atelier-container text-center"><h2 className="text-5xl font-semibold leading-[.95] sm:text-6xl">Seu momento merece<br/>detalhes inesquecíveis.</h2><p className="mx-auto mt-5 max-w-md text-sm leading-6 text-primary-foreground/85">Conte sua ideia para nós e vamos criar algo exclusivamente seu.</p><div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Button asChild size="atelier" className="bg-brown-dark hover:bg-brown"><Link to="/encomenda">Monte sua encomenda <ArrowRight/></Link></Button><Button asChild size="atelier" variant="atelierOutline" className="border-primary-foreground/50 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"><a href={whatsapp} target="_blank" rel="noreferrer">Falar no WhatsApp</a></Button></div></motion.div></section>
     </main>

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, Menu, Search, ShoppingBag } from "lucide-react";
+import { Heart, Menu, Search, Settings, ShoppingBag } from "lucide-react";
 import { Brand } from "./brand";
 import { Button } from "./ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "./ui/sheet";
@@ -12,7 +12,7 @@ const nav = [
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-paper/90 backdrop-blur-xl">
-      <div className="atelier-container grid h-[68px] grid-cols-[40px_1fr_40px] items-center lg:flex lg:h-[78px] lg:justify-between">
+      <div className="atelier-container grid h-[68px] grid-cols-[40px_1fr_40px_40px] items-center lg:flex lg:h-[78px] lg:justify-between">
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu"><Menu /></Button>
@@ -34,8 +34,10 @@ export function SiteHeader() {
           <Button variant="ghost" size="icon" aria-label="Pesquisar"><Search strokeWidth={1.5} /></Button>
           <Button variant="ghost" size="icon" aria-label="Favoritos"><Heart strokeWidth={1.5} /></Button>
           <Button variant="ghost" size="icon" aria-label="Encomenda"><ShoppingBag strokeWidth={1.5} /></Button>
+          <Button asChild variant="ghost" size="icon" aria-label="Administração"><Link to="/admin/login"><Settings strokeWidth={1.5} /></Link></Button>
           <Button asChild variant="atelier" size="atelier" className="ml-3"><Link to="/encomenda">Faça sua encomenda</Link></Button>
         </div>
+        <Link to="/admin/login" aria-label="Administração" className="grid size-10 place-items-center lg:hidden"><Settings className="size-5 text-muted-foreground" strokeWidth={1.5} /></Link>
         <Link to="/encomenda" aria-label="Abrir encomenda" className="grid size-10 place-items-center justify-self-end lg:hidden"><ShoppingBag className="size-5" strokeWidth={1.5} /></Link>
       </div>
     </header>
